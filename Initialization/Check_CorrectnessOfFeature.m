@@ -7,8 +7,8 @@ method = 'ECCA4';
 % allData: SSVEP data in cell format
 % allData{j} contains SSVEP data from j^th subject
 prefilter = true; % Use the data that have been filtered (for the whole 5s signal)
-name = sprintf('benchmark_prefilter%d_CAR0.mat',prefilter);
-load(['ProcessedData\' name]);
+name = sprintf('benchmark_ssvep_prefilter%d_CAR0.mat',prefilter);
+load(['..\ProcessedData\' name]);
 % warning('off','stats:canoncorr:NotFullRank');
 startTime = 0.14; 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Basic info of data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -16,16 +16,14 @@ trialLength = dataSize(1); %Number of recorded EEG response for each stimulus fr
 freqLength = dataSize(2); %Number of visual stimulus 
 sampleLength = dataSize(3); %Number of time points in each record
 channelLength = dataSize(4); %Number of channels used in each experiment
-numSubject = length(allData); %Number of subjects in the data set
+numSubject = dataSize(5); %Number of subjects in the data set
 trialSeq = 1:trialLength;
 subjectSeq = 1:numSubject;
 startIdx = round(fsample*startTime);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 all_ssvep = cat(5,allData{:});
 clearvars allData
-
 load('\\10.119.68.248\BCIShare\KevinNKData\New folder\Feature\ECCA4_Benchmark_Nh5_time100_filter1_final.mat');
-
 
 % Check random trial and and random frequency and random source data and
 % random target template

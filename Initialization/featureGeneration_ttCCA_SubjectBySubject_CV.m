@@ -1,4 +1,4 @@
-clear;clc;addpath('Function');
+clear;clc;addpath('..\Function\');
 %% Testing parameter
 nameDataset = 'Benchmark';
 method = 'ECCA4';
@@ -7,10 +7,10 @@ method = 'ECCA4';
 % allData: SSVEP data in cell format
 % allData{j} contains SSVEP data from j^th subject
 prefilter = true; % Use the data that have been filtered (for the whole 5s signal)
-name = sprintf('benchmark_prefilter%d_CAR0.mat',prefilter);
-load(['ProcessedData\' name]);
+name = sprintf('benchmark_ssvep_prefilter%d_CAR0.mat',prefilter);
+load(['..\ProcessedData\' name]);
 % warning('off','stats:canoncorr:NotFullRank');
-startTime = 0.14; 
+startTime = 0.14+0.5; 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Basic info of data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 trialLength = dataSize(1); %Number of recorded EEG response for each stimulus frequency
 freqLength = dataSize(2); %Number of visual stimulus 
@@ -21,7 +21,6 @@ trialSeq = 1:trialLength;
 subjectSeq = 1:numSubject;
 startIdx = round(fsample*startTime);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-all_ssvep = cat(5,allData{:});
 clearvars allData
 
 % One-hot encoded label for each data
@@ -31,7 +30,7 @@ for i = 1:numSubject
 end
 %% Loop through different time length and Nh
 NhSeq = 5;
-timeSeq = 1.25:0.25:4;
+timeSeq = 0.25:0.25:4;
 
 for Nhidx = 1:length(NhSeq)
     Nh = NhSeq(Nhidx);
@@ -49,9 +48,9 @@ for Nhidx = 1:length(NhSeq)
             for cvTestTrial = 1:trialLength
                 % Take trial 2 - 6 for training and trial 1 for validation
                 cvTrainSeq = find(trialSeq ~= cvTestTrial);
-                train_ssvep = all_ssvep(cvTrainSeq,:,startIdx+1:startIdx+wlen,:,:);
+                train_ssvep = allData(cvTrainSeq,:,startIdx+1:startIdx+wlen,:,:);
                 train_template = squeeze(mean(train_ssvep));
-                valid_ssvep = squeeze(all_ssvep(cvTestTrial,:,startIdx+1:startIdx+wlen,:,testSubject));
+                valid_ssvep = squeeze(allData(cvTestTrial,:,startIdx+1:startIdx+wlen,:,testSubject));
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 tempFeatureGroup1 = zeros(freqLength,numSubject,freqLength);
                 tempFeatureGroup2 = zeros(freqLength,numSubject,freqLength);
