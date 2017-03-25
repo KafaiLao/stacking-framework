@@ -1,4 +1,4 @@
-clear;clc;addpath('Function');
+clear;clc;addpath('..\Function');
 %% Testing parameter
 nameDataset = 'Benchmark';
 method = 'ECCA4';
@@ -10,7 +10,7 @@ prefilter = true; % Use the data that have been filtered (for the whole 5s signa
 name = sprintf('benchmark_ssvep_prefilter%d_CAR0.mat',prefilter);
 load(['..\ProcessedData\' name]);
 % warning('off','stats:canoncorr:NotFullRank');
-startTime = 0.14; 
+startTime = 0.14+0.5; 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Basic info of data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 trialLength = dataSize(1); %Number of recorded EEG response for each stimulus frequency
 freqLength = dataSize(2); %Number of visual stimulus 
@@ -21,9 +21,7 @@ trialSeq = 1:trialLength;
 subjectSeq = 1:numSubject;
 startIdx = round(fsample*startTime);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-all_ssvep = cat(5,allData{:});
-clearvars allData
-load('\\10.119.68.248\BCIShare\KevinNKData\New folder\Feature\ECCA4_Benchmark_Nh5_time100_filter1_final.mat');
+load('..\Feature\ECCA4_Benchmark_Nh5_time100_filter1_cv.mat');
 
 % Check random trial and and random frequency and random source data and
 % random target template
@@ -36,11 +34,11 @@ for ch = 1:10
     
     cvTrial = trialSeq ~= ranTrial;
     
-    Xnew = squeeze(all_ssvep(ranTrial,ranFreq,startIdx+1:startIdx+floor(fsample*1),:,ranTarget));
-    Xtemplate = squeeze(mean(all_ssvep(cvTrial,:,startIdx+1:startIdx+floor(fsample*1),:,ranSource)));
+    Xnew = squeeze(allData(ranTrial,ranFreq,startIdx+1:startIdx+floor(fsample*1),:,ranTarget));
+    Xtemplate = squeeze(mean(allData(cvTrial,:,startIdx+1:startIdx+floor(fsample*1),:,ranSource)));
     [~,pvec] = ccaExtend(Xnew,Xtemplate,sinTemplate,'Combination4');
     
-    result = squeeze(sourceFeatureSet(ranTarget,(ranTrial-1)*freqLength+ranFreq,ranSource,:));
+    result = squeeze(trainFeatureSet(ranTarget,(ranTrial-1)*freqLength+ranFreq,ranSource,:));
     if all((pvec(:,1) - result) < 1e-9)
         fprintf('Reuslt no problem, go ahead\n');
     else

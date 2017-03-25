@@ -16,12 +16,11 @@ trialLength = dataSize(1); %Number of recorded EEG response for each stimulus fr
 freqLength = dataSize(2); %Number of visual stimulus 
 sampleLength = dataSize(3); %Number of time points in each record
 channelLength = dataSize(4); %Number of channels used in each experiment
-numSubject = length(allData); %Number of subjects in the data set
+numSubject = dataSize(5); %Number of subjects in the data set
 trialSeq = 1:trialLength;
 subjectSeq = 1:numSubject;
 startIdx = round(fsample*startTime);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-clearvars allData
 
 % One-hot encoded label for each data
 label = zeros(numSubject,trialLength*freqLength,freqLength);
@@ -41,7 +40,7 @@ for Nhidx = 1:length(NhSeq)
         %% Extract features for all data (including test data)
         % featureSet: [testSubject,size of data, views, features]
         % Each subject provide nF views on the input data + one view from CCA with sinusodial template
-        featureSet = zeros(numSubject,trialLength*freqLength,numSubject*3+1,freqLength);
+        trainFeatureSet = zeros(numSubject,trialLength*freqLength,numSubject*3+1,freqLength);
         wlen = floor(time*fsample);
         % Extract feature through CCA with artifical/subject-specific template
         for testSubject = 1:numSubject
@@ -77,15 +76,15 @@ for Nhidx = 1:length(NhSeq)
                     tempFeatureGroupCCA(:,ithTemplate,:) = tempFeatureCCA;
                 end
                 insertIdx = (cvTestTrial-1)*freqLength+1:cvTestTrial*freqLength;
-                featureSet(testSubject,insertIdx,1:numSubject,:) = tempFeatureGroup1;
-                featureSet(testSubject,insertIdx,numSubject+1:numSubject*2,:) = tempFeatureGroup2;
-                featureSet(testSubject,insertIdx,numSubject*2+1:numSubject*3,:) = tempFeatureGroup3;
-                featureSet(testSubject,insertIdx,end,:) = squeeze(tempFeatureGroupCCA(:,1,:));
+                trainFeatureSet(testSubject,insertIdx,1:numSubject,:) = tempFeatureGroup1;
+                trainFeatureSet(testSubject,insertIdx,numSubject+1:numSubject*2,:) = tempFeatureGroup2;
+                trainFeatureSet(testSubject,insertIdx,numSubject*2+1:numSubject*3,:) = tempFeatureGroup3;
+                trainFeatureSet(testSubject,insertIdx,end,:) = squeeze(tempFeatureGroupCCA(:,1,:));
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             end              
             fprintf(sprintf('Finish s%d\n',testSubject));
         end
-        save(['Feature\' sprintf('%s_%s_Nh%d_time%d_filter%d_cv.mat',method,nameDataset,Nh,time*100,1)],'featureSet','label');
+        save(['..\Feature\' sprintf('%s_%s_Nh%d_time%d_filter%d_cv.mat',method,nameDataset,Nh,time*100,1)],'trainFeatureSet','label');
         fprintf(sprintf('Have saved %s_%s_Nh%d_time%d_filter%d_cv.mat\n',method,nameDataset,Nh,time*100,1));
     end
 end
