@@ -1,4 +1,4 @@
-clear;clc;addpath('Function');
+clear;clc;addpath('..\Function');
 %% Testing parameter
 nameDataset = 'Benchmark';
 method = 'ECCA4';
@@ -7,27 +7,23 @@ method = 'ECCA4';
 % allData: SSVEP data in cell format
 % allData{j} contains SSVEP data from j^th subject
 prefilter = true; % Use the data that have been filtered (for the whole 5s signal)
-name = sprintf('benchmark_prefilter%d_CAR0.mat',prefilter);
-load(['ProcessedData\' name]);
+name = sprintf('benchmark_ssvep_prefilter%d_CAR0.mat',prefilter);
+load(['..\ProcessedData\' name]);
 % warning('off','stats:canoncorr:NotFullRank');
-startTime = 0.14; 
+startTime = 0.14+0.5; 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Basic info of data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 trialLength = dataSize(1); %Number of recorded EEG response for each stimulus frequency
 freqLength = dataSize(2); %Number of visual stimulus 
 sampleLength = dataSize(3); %Number of time points in each record
 channelLength = dataSize(4); %Number of channels used in each experiment
-numSubject = length(allData); %Number of subjects in the data set
+numSubject = dataSize(5); %Number of subjects in the data set
 trialSeq = 1:trialLength;
 subjectSeq = 1:numSubject;
 startIdx = round(fsample*startTime);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Calculate the average EEG response template for each subject
-numTemplate = numSubject + 1;
-allTemplate = cell(numSubject,1);
-for subject = 1:numSubject
-    allTemplate{subject} = squeeze(mean(allData{subject}));
-end
-allTemplateMat = cat(4,allTemplate{:});
+numTemplate = numSubject;
+allTemplate = squeeze(mean(allData,1));
 
 % One-hot encoded label for each data
 label = zeros(numSubject,trialLength*freqLength,freqLength);
@@ -47,12 +43,11 @@ for Nhidx = 1:length(NhSeq)
         %% Extract features for all data (including test data)
         % featureSet: [testSubject,size of data, views, features]
         % Each subject provide nF views on the input data + one view from CCA with sinusodial template
-        featureSet = zeros(numSubject,trialLength*freqLength,numTemplate*3+1,freqLength);
+        testFeatureSet = zeros(numSubject,trialLength*freqLength,numTemplate*3+1,freqLength);
         % Extract feature through CCA with artifical/subject-specific template
         for testSubject = 1:numSubject
-            ssvep = allData{testSubject};
+            ssvep = squeeze(allData(:,:,:,:,testSubject));
             sourceSeq = find(subjectSeq ~= testSubject);
-            allTemplate{numSubject+1} = squeeze(mean(allTemplateMat(:,:,:,sourceSeq),4));
 
             tempFeature = zeros(freqLength*trialLength,numTemplate*3+1,freqLength);
             tempFeatureGroup1 = zeros(freqLength*trialLength,numTemplate,freqLength);
@@ -64,7 +59,7 @@ for Nhidx = 1:length(NhSeq)
                 tempFeature2 = zeros(freqLength*trialLength,freqLength);
                 tempFeature3 = zeros(freqLength*trialLength,freqLength);
                 tempFeatureCCA = zeros(freqLength*trialLength,freqLength);
-                Xtemplate = allTemplate{ithTemplate};
+                Xtemplate = squeeze(allTemplate(:,:,:,ithTemplate));
                 Xtemplate = Xtemplate(:,startIdx+1:startIdx+floor(time*fsample),:);
                 for trial = 1:trialLength
                     for freq = 1:freqLength
@@ -81,14 +76,14 @@ for Nhidx = 1:length(NhSeq)
                 tempFeatureGroup3(:,ithTemplate,:) = tempFeature3;
                 tempFeatureGroupCCA(:,ithTemplate,:) = tempFeatureCCA;
             end
-            featureSet(testSubject,:,1:numTemplate,:) = tempFeatureGroup1;
-            featureSet(testSubject,:,numTemplate+1:numTemplate*2,:) = tempFeatureGroup2;
-            featureSet(testSubject,:,numTemplate*2+1:numTemplate*3,:) = tempFeatureGroup3;
-            featureSet(testSubject,:,end,:) = squeeze(tempFeatureGroupCCA(:,1,:));
+            testFeatureSet(testSubject,:,1:numTemplate,:) = tempFeatureGroup1;
+            testFeatureSet(testSubject,:,numTemplate+1:numTemplate*2,:) = tempFeatureGroup2;
+            testFeatureSet(testSubject,:,numTemplate*2+1:numTemplate*3,:) = tempFeatureGroup3;
+            testFeatureSet(testSubject,:,end,:) = squeeze(tempFeatureGroupCCA(:,1,:));
             
             fprintf(sprintf('Finish s%d\n',testSubject));
         end
-        save(['Feature\' sprintf('%s_%s_Nh%d_time%d_filter%d.mat',method,nameDataset,Nh,time*100,1)],'featureSet','label');
+        save(['..\Feature\' sprintf('%s_%s_Nh%d_time%d_filter%d.mat',method,nameDataset,Nh,time*100,1)],'testFeatureSet','label');
         fprintf(sprintf('Have saved %s_%s_Nh%d_time%d_filter%d.mat\n',method,nameDataset,Nh,time*100,1));
     end
 end
