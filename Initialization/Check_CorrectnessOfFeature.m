@@ -21,7 +21,7 @@ trialSeq = 1:trialLength;
 subjectSeq = 1:numSubject;
 startIdx = round(fsample*startTime);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-load('..\Feature\ECCA4_Benchmark_Nh5_time100_filter1_cv.mat');
+load('..\Feature\ECCA4_Benchmark_Nh5_time100_filter1_level1_Data.mat');
 
 % Check random trial and and random frequency and random source data and
 % random target template
@@ -39,7 +39,7 @@ for ch = 1:10
     [~,pvec] = ccaExtend(Xnew,Xtemplate,sinTemplate,'Combination4');
     
     result = squeeze(trainFeatureSet(ranTarget,(ranTrial-1)*freqLength+ranFreq,ranSource,:));
-    if all((pvec(:,1) - result) < 1e-9)
+    if all(abs((pvec(:,1) - result)) < 1e-9)
         fprintf('Reuslt no problem, go ahead\n');
     else
         fprintf('Oh no!\n');
@@ -56,18 +56,19 @@ for ch = 1:10
     while ranSource == ranTarget
         ranTarget = randsample(1:35,1);
     end
-    feataureSelector = find(subjectSeq ~= ranTarget);
-    cvTrial = trialSeq ~= ranTrial;
     
-    Xnew = squeeze(all_ssvep(ranTrial,ranFreq,startIdx+1:startIdx+floor(fsample*1),:,ranTarget));
-    Xtemplate = squeeze(mean(all_ssvep(:,:,startIdx+1:startIdx+floor(fsample*1),:,ranSource)));
+    Xnew = squeeze(allData(ranTrial,ranFreq,startIdx+1:startIdx+floor(fsample*1),:,ranTarget));
+    Xtemplate = squeeze(mean(allData(:,:,startIdx+1:startIdx+floor(fsample*1),:,ranSource)));
     [~,pvec] = ccaExtend(Xnew,Xtemplate,sinTemplate,'Combination4');
     
-    result = squeeze(targetFeatureSet(ranTarget,(ranTrial-1)*freqLength+ranFreq,find(feataureSelector == ranSource),:));
-    if all((pvec(:,1) - result) < 1e-9)
+    result = squeeze(testFeatureSet(ranTarget,(ranTrial-1)*freqLength+ranFreq,ranSource,:));
+    if all(abs((pvec(:,1) - result)) < 1e-9)
         fprintf('Reuslt no problem, go ahead\n');
+%         max(abs((pvec(:,1) - result)))
     else
         fprintf('Oh no!\n');
+        [ranTrial ranFreq ranSource ranTarget]
+        max(abs((pvec(:,1) - result)))
     end
 end
 
