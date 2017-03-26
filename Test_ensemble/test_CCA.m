@@ -1,4 +1,4 @@
-clearvars -except list method;clc;addpath('Function');
+clearvars -except list method;clc;addpath('..\Function');
 %% Testing parameter
 method = 'CCA';
 nameDataset = 'Benchmark';
@@ -8,20 +8,21 @@ nameDataset = 'Benchmark';
 % allData: SSVEP data in cell format
 % allData{j} contains SSVEP data from j^th subject
 prefilter = true; % Use the data that have been filtered (for the whole 5s signal)
-name = sprintf('benchmark_prefilter%d_CAR0.mat',prefilter);
-load(['ProcessedData\' name]);
+name = sprintf('benchmark_ssvep_prefilter%d_CAR0.mat',prefilter);
+load(['..\ProcessedData\' name]);
 fprintf('Stimulus frequency:\n');
 disp(stimuFreq);
 %%%%%%%%%%%%%%%%%% Specific starting time (i.e., remove some initial data points %%%%%%%%%%%%%%%%%%%%%
-startTime = 0.14; 
-startIdx = round(fsample*startTime);
+startTime = 0.14;
+prestimulusTime = 0.5;
+startIdx = round(fsample*(startTime+prestimulusTime));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Basic info of data
 trialLength = dataSize(1); %Number of recorded EEG response for each stimulus frequency
 freqLength = dataSize(2); %Number of visual stimulus 
 sampleLength = dataSize(3); %Number of time points in each record
 channelLength = dataSize(4); %Number of channels used in each experiment
-numSubject = length(allData); %Number of subjects in the data set
+numSubject = dataSize(5); %Number of subjects in the data set
 trialSeq = 1:trialLength;
 subjectSeq = 1:numSubject;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -39,7 +40,7 @@ for Nhidx = 1:length(NhSeq)
         sinTemplate = genSinTemplate(stimuFreq,fsample,time,Nh);
         rec = zeros(numSubject,1);
         parfor targetSubject = 1:numSubject
-            ssvep = allData{targetSubject};
+            ssvep = squeeze(allData(:,:,:,:,targetSubject));
             rec_subjectSpecific = zeros(freqLength);
             for trial = 1:trialLength
                 for freq = 1:freqLength
@@ -70,11 +71,11 @@ for Nhidx = 1:length(NhSeq)
     row_header{numSubject+1} = 'Mean';
     row_header{numSubject+2} = 'Std';
     str = sprintf('%s_%s_startfrom%dms_filtered.xlsx',method,nameDataset,startTime*1000);
-    filename = ['Result\' str];
+    filename = ['..\Result\' str];
     xlswrite(filename,acc,sprintf('Nh = %d',Nh),'B2');     %Write data
     xlswrite(filename,col_header,sprintf('Nh = %d',Nh),'B1');     %Write column header
     xlswrite(filename,row_header,sprintf('Nh = %d',Nh),'A2');      %Write row header
     fprintf('Finish N = %d simulation\n',Nh);
 end
 str = sprintf('%s_%s_startfrom%dms_filtered',method,nameDataset,startTime*1000);
-save(['Result\' str '_confusion.mat'],'rec_confusion');
+save(['..\Result\' str '_confusion.mat'],'rec_confusion');
