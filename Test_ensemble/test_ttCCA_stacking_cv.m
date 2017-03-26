@@ -1,4 +1,4 @@
-clear;clc;addpath('Function');
+clear;clc;addpath('..\Function');
 %% Testing parameter
 nameDataset = 'Benchmark';
 method = 'ECCA4';
@@ -20,24 +20,22 @@ for Nhidx = 1:length(NhSeq)
     acc = zeros(numSubject+2,length(timeSeq));
     for tidx = 1:length(timeSeq)
         time = timeSeq(tidx);
-        load(['Feature\' sprintf('%s_%s_Nh%d_time%d_filter%d_final.mat',method,nameDataset,Nh,time*100,1)]);
+        load(['..\Feature\' sprintf('%s_%s_Nh%d_time%d_filter%d_level1_Data.mat',method,nameDataset,Nh,time*100,1)]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Convert the correlation coefficient to probability %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        sourceFeatureSetProb = zeros(size(sourceFeatureSet));
-        for i = 1:size(sourceFeatureSet,1)
-            for j = 1:size(sourceFeatureSet,2)
-                for k = 1:size(sourceFeatureSet,3)
-%                     sourceFeatureSet(i,j,k,:) = (sourceFeatureSet(i,j,k,:)-min(sourceFeatureSet(i,j,k,:)))/sum((sourceFeatureSet(i,j,k,:)-min(sourceFeatureSet(i,j,k,:))));
-                    sourceFeatureSetProb(i,j,k,:) = softmaxfun(sourceFeatureSet(i,j,k,:),Tempature);
+        trainFeatureSetProb = zeros(size(trainFeatureSet));
+        for i = 1:size(trainFeatureSet,1)
+            for j = 1:size(trainFeatureSet,2)
+                for k = 1:size(trainFeatureSet,3)
+                    trainFeatureSetProb(i,j,k,:) = softmaxfun(trainFeatureSet(i,j,k,:),Tempature);
                 end
             end
         end
         
-        targetFeatureSetProb = zeros(size(targetFeatureSet));
-        for i = 1:size(targetFeatureSet,1)
-            for j = 1:size(targetFeatureSet,2)
-                for k = 1:size(targetFeatureSet,3)
-%                     sourceFeatureSet(i,j,k,:) = (sourceFeatureSet(i,j,k,:)-min(sourceFeatureSet(i,j,k,:)))/sum((sourceFeatureSet(i,j,k,:)-min(sourceFeatureSet(i,j,k,:))));
-                    targetFeatureSetProb(i,j,k,:) = softmaxfun(targetFeatureSet(i,j,k,:),Tempature);
+        testFeatureSetProb = zeros(size(testFeatureSet));
+        for i = 1:size(testFeatureSet,1)
+            for j = 1:size(testFeatureSet,2)
+                for k = 1:size(testFeatureSet,3)
+                    testFeatureSetProb(i,j,k,:) = softmaxfun(testFeatureSet(i,j,k,:),Tempature);
                 end
             end
         end        
@@ -49,9 +47,11 @@ for Nhidx = 1:length(NhSeq)
         rec = zeros(numSubject,1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
         for testSubject = 1:numSubject
-            testData = squeeze(targetFeatureSetProb(testSubject,:,:,:));
-            takeIdx = find(templateTags ~= testSubject & templateTags ~= numSubject + 1);
-            trainData = squeeze(sourceFeatureSetProb(sourceSeq ~= testSubject,:,takeIdx,:));
+            takeIdx = find(templateTags ~= testSubject);
+            % Take out the test (target subject) data
+            testData = squeeze(testFeatureSetProb(testSubject,:,takeIdx,:));
+            % Take out the train (source subjects) data
+            trainData = squeeze(trainFeatureSetProb(sourceSeq ~= testSubject,:,takeIdx,:));
             trainData = reshape(trainData,size(trainData,1)*size(trainData,2),size(trainData,3),size(trainData,4));
             
             Beta = zeros(size(trainData,2)+1,freqLength);
@@ -99,12 +99,12 @@ for Nhidx = 1:length(NhSeq)
     end
     row_header{numSubject+1} = 'Mean';
     row_header{numSubject+2} = 'Std';
-    str = sprintf('dsttCCA_%s_%s_startfrom%dms_filtered_CV.xlsx',method,nameDataset,startTime*1000);
+    str = sprintf('ttCCA_stack_%s_%s_startfrom%dms_filtered_CV.xlsx',method,nameDataset,startTime*1000);
     filename = ['Result\' str];
     xlswrite(filename,acc,sprintf('Nh = %d',Nh),'B2');     %Write data
     xlswrite(filename,col_header,sprintf('Nh = %d',Nh),'B1');     %Write column header
     xlswrite(filename,row_header,sprintf('Nh = %d',Nh),'A2');      %Write row header
     fprintf('Finish N = %d simulation\n',Nh);
 end
-str = sprintf('dsttCCA_%s_%s_startfrom%dms_filtered_CV',method,nameDataset,startTime*1000);
-save(['Result\' str '_confusion.mat'],'rec_confusion','rec_Beta','rec_Constant','rec_largeModelOutput');
+str = sprintf('ttCCA_stack_%s_%s_startfrom%dms_filtered_CV',method,nameDataset,startTime*1000);
+save(['..\Result\' str '_confusion.mat'],'rec_confusion','rec_Beta','rec_Constant','rec_largeModelOutput');

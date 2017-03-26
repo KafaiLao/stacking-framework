@@ -36,6 +36,12 @@ end
 alpha_filter = genBPFilter([8 13],[7.5 13.5],Rp,Rs,fsample);
 lowbeta_filter = genBPFilter([13 16],[12.5 16.5],Rp,Rs,fsample);
 beta_filter = genBPFilter([16 20],[15.5 20.5],Rp,Rs,fsample);
+if ~(isstable(ssvep_filter(1,:),ssvep_filter(2,:)) && ...
+        isstable(alpha_filter(1,:),alpha_filter(2,:)) && ...
+        isstable(lowbeta_filter(1,:),lowbeta_filter(2,:))) && ...
+        isstable(beta_filter(1,:),beta_filter(2,:))
+    stop
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Remove the redundant time segment and channels
 % delay = 0.5*fsample; %0.5 record for pre-stimulus onset
@@ -43,7 +49,7 @@ delay = 0; % (23/03/2017): Since the pre-stimulus signal may be useful, keep it
 sChannel = [48 54:58 61:63]; %(Pz, PO5, PO3, POz, PO4, PO6, O1, Oz, and O2)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Intialize the variable
-preL = round(0.7*fsample); % Segement for pre-stimulus
+preL = round(1*fsample); % Segement for pre-stimulus
 allData = zeros(trialLength,freqLength,time*fsample,length(sChannel),numSubject);
 prestimulus_alpha = zeros(trialLength,freqLength,preL,length(sChannel),numSubject);
 prestimulus_lowbeta = zeros(size(prestimulus_alpha));
